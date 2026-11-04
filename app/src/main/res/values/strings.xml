@@ -1,0 +1,11 @@
+<resources>
+    <string name="app_name">Money Tracker</string>
+    <string name="widget_description">What you can still spend today, with a button to add a transaction.</string>
+    <string name="tile_label">Add expense</string>
+    <string name="shortcut_add_short">Add</string>
+    <string name="shortcut_add_long">Add a transaction</string>
+    <string name="widget_today">Today</string>
+    <string name="widget_placeholder">₹0 left</string>
+    <string name="widget_add_description">Add transaction</string>
+    <string name="widget_plus">+</string>
+</resources>

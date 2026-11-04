@@ -1,0 +1,66 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1280" height="360" viewBox="0 0 1280 360" role="img" aria-labelledby="t d">
+  <title id="t">Money Tracker</title>
+  <desc id="d">A private, offline spending tracker for Android</desc>
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#0A84FF"/>
+      <stop offset="0.55" stop-color="#0071E3"/>
+      <stop offset="1" stop-color="#3A2FD6"/>
+    </linearGradient>
+    <radialGradient id="glow" cx="0.82" cy="0.2" r="0.7">
+      <stop offset="0" stop-color="#FFFFFF" stop-opacity="0.35"/>
+      <stop offset="1" stop-color="#FFFFFF" stop-opacity="0"/>
+    </radialGradient>
+    <linearGradient id="coin" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#FFC24B"/>
+      <stop offset="1" stop-color="#F5A623"/>
+    </linearGradient>
+    <filter id="shadow" x="-20%" y="-20%" width="140%" height="150%">
+      <feDropShadow dx="0" dy="14" stdDeviation="16" flood-color="#001B4D" flood-opacity="0.35"/>
+    </filter>
+  </defs>
+
+  <rect width="1280" height="360" rx="28" fill="url(#bg)"/>
+  <rect width="1280" height="360" rx="28" fill="url(#glow)"/>
+
+  <!-- decorative rings -->
+  <g fill="none" stroke="#FFFFFF" stroke-opacity="0.14" stroke-width="2">
+    <circle cx="1130" cy="70" r="150"/>
+    <circle cx="1130" cy="70" r="220"/>
+    <circle cx="1130" cy="70" r="290"/>
+  </g>
+
+  <!-- app mark -->
+  <g filter="url(#shadow)">
+    <rect x="86" y="86" width="188" height="188" rx="44" fill="#FFFFFF"/>
+    <rect x="113" y="126" width="134" height="92" rx="16" fill="#0071E3"/>
+    <rect x="113" y="148" width="134" height="16" fill="#FFFFFF" fill-opacity="0.92"/>
+    <circle cx="214" cy="194" r="15" fill="url(#coin)"/>
+  </g>
+
+  <!-- title -->
+  <g font-family="Inter, 'SF Pro Display', 'Segoe UI', Roboto, Helvetica, Arial, sans-serif" fill="#FFFFFF">
+    <text x="322" y="166" font-size="84" font-weight="800" letter-spacing="-2">Money Tracker</text>
+    <text x="326" y="214" font-size="30" font-weight="500" fill-opacity="0.92">Your spending, on your phone. Nowhere else.</text>
+  </g>
+
+  <!-- feature pills -->
+  <g font-family="Inter, 'SF Pro Text', 'Segoe UI', Roboto, Helvetica, Arial, sans-serif" font-size="20" font-weight="600">
+    <g transform="translate(326 246)">
+      <rect width="146" height="42" rx="21" fill="#FFFFFF" fill-opacity="0.18"/>
+      <text x="73" y="28" text-anchor="middle" fill="#FFFFFF">100% offline</text>
+    </g>
+    <g transform="translate(488 246)">
+      <rect width="190" height="42" rx="21" fill="#FFFFFF" fill-opacity="0.18"/>
+      <text x="95" y="28" text-anchor="middle" fill="#FFFFFF">Encrypted backups</text>
+    </g>
+    <g transform="translate(694 246)">
+      <rect width="170" height="42" rx="21" fill="#FFFFFF" fill-opacity="0.18"/>
+      <text x="85" y="28" text-anchor="middle" fill="#FFFFFF">Daily spend limit</text>
+    </g>
+    <g transform="translate(880 246)">
+      <rect width="118" height="42" rx="21" fill="#FFFFFF" fill-opacity="0.18"/>
+      <text x="59" y="28" text-anchor="middle" fill="#FFFFFF">INR ₹</text>
+    </g>
+  </g>
+</svg>

@@ -1,0 +1,11 @@
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="24dp"
+    android:height="24dp"
+    android:viewportWidth="24"
+    android:viewportHeight="24">
+    <!-- A card with a stripe, matching the app icon; status-bar icons are drawn in a single color. -->
+    <path
+        android:fillColor="#FFFFFFFF"
+        android:fillType="evenOdd"
+        android:pathData="M5,5 L19,5 Q21,5 21,7 L21,17 Q21,19 19,19 L5,19 Q3,19 3,17 L3,7 Q3,5 5,5 Z M3,9 L21,9 L21,11 L3,11 Z" />
+</vector>

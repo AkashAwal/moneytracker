@@ -1,0 +1,18 @@
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+    <!-- Card -->
+    <path
+        android:fillColor="#FFFFFF"
+        android:pathData="M30,38 L78,38 Q84,38 84,44 L84,66 Q84,72 78,72 L30,72 Q24,72 24,66 L24,44 Q24,38 30,38 Z" />
+    <!-- Stripe -->
+    <path
+        android:fillColor="#0071E3"
+        android:pathData="M24,48 L84,48 L84,53 L24,53 Z" />
+    <!-- Amber coin -->
+    <path
+        android:fillColor="#F5A623"
+        android:pathData="M66,63 m-7,0 a7,7 0 1,0 14,0 a7,7 0 1,0 -14,0" />
+</vector>

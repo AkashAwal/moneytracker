@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<shortcuts xmlns:android="http://schemas.android.com/apk/res/android">
+    <!-- Long-press the app icon to jump straight to the add sheet. -->
+    <shortcut
+        android:enabled="true"
+        android:icon="@drawable/ic_shortcut_add"
+        android:shortcutId="add_transaction"
+        android:shortcutLongLabel="@string/shortcut_add_long"
+        android:shortcutShortLabel="@string/shortcut_add_short">
+        <intent
+            android:action="com.akash.moneytracker.QUICK_ADD"
+            android:targetClass="com.akash.moneytracker.MainActivity"
+            android:targetPackage="com.akash.moneytracker" />
+    </shortcut>
+</shortcuts>
