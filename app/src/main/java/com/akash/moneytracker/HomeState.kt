@@ -72,6 +72,7 @@ fun computeHome(
 
     val loggedIncome = monthTx.filter { it.tx.type == TxType.INCOME }.sumOf { it.tx.amountPaise }
     val income = maxOf(settings.expectedIncomePaise, loggedIncome)
+    val limitOn = settings.limitEnabled
     val needsSetup = settings.goalMonth != today.monthKey || income == 0L
 
     val categorySpend = expenses.groupBy { it.tx.categoryId }.mapValues { (_, rows) -> rows.sumOf { it.tx.amountPaise } }
@@ -86,14 +87,14 @@ fun computeHome(
         income = income,
         spent = spent,
         needsSetup = needsSetup,
-        budget = if (needsSetup) null else {
+        budget = if (!limitOn || needsSetup) null else {
             DailyBudget.compute(income, settings.savingsGoalPaise, dailySpent, dailySpentToday, today, reserved)
         },
         recent = all.take(5),
         budgetAlerts = alerts,
         budgetLimits = plan.budgets,
         categorySpend = categorySpend,
-        forecast = if (needsSetup) null else {
+        forecast = if (!limitOn || needsSetup) null else {
             Forecast.compute(income, settings.savingsGoalPaise, dailySpent, reserved, today)
         },
         streaks = StreakCalc.compute(all, today),

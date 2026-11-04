@@ -9,6 +9,7 @@ import androidx.compose.foundation.layout.RowScope
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.lazy.LazyColumn
@@ -62,6 +63,7 @@ import com.akash.moneytracker.ui.theme.extra
 fun HomeScreen(
     state: HomeState?,
     onSaveGoal: (income: Long, goal: Long) -> Unit,
+    onSetLimitEnabled: (Boolean) -> Unit,
     onSeeAll: () -> Unit,
     onEdit: (TransactionEntity) -> Unit,
     onOpenBudgets: () -> Unit,
@@ -91,7 +93,18 @@ fun HomeScreen(
             }
         }
         item {
-            DailyLimitCard(state = state, onSetGoal = { showGoal = true }, onSaveGoal = onSaveGoal)
+            if (state.settings.limitEnabled) {
+                DailyLimitCard(
+                    state = state,
+                    onSetGoal = { showGoal = true },
+                    onSaveGoal = onSaveGoal,
+                    onHide = { onSetLimitEnabled(false) },
+                )
+            } else {
+                TextButton(onClick = { onSetLimitEnabled(true) }) {
+                    Text("Turn on daily limit and savings goal")
+                }
+            }
         }
         if (state.suggestions.isNotEmpty()) {
             item { SuggestionsCard(state.suggestions, state.today, onReviewSuggestion, onDismissSuggestion) }
@@ -257,10 +270,11 @@ private fun DailyLimitCard(
     state: HomeState,
     onSetGoal: () -> Unit,
     onSaveGoal: (income: Long, goal: Long) -> Unit,
+    onHide: () -> Unit,
 ) {
     val budget = state.budget
     if (budget == null) {
-        SetupCard(state, onSaveGoal)
+        SetupCard(state, onSaveGoal, onHide)
         return
     }
 
@@ -275,11 +289,15 @@ private fun DailyLimitCard(
         onClick = onSetGoal,
     ) {
         Column(Modifier.padding(20.dp)) {
-            Text(
-                if (budget.overToday) "Over today's limit" else "You can spend today",
-                style = MaterialTheme.typography.labelLarge,
-                color = accent,
-            )
+            Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+                Text(
+                    if (budget.overToday) "Over today's limit" else "You can spend today",
+                    style = MaterialTheme.typography.labelLarge,
+                    color = accent,
+                    modifier = Modifier.weight(1f),
+                )
+                HideButton(onHide, accent)
+            }
             Spacer(Modifier.height(4.dp))
             Text(
                 text = if (budget.overToday) Money.format(budget.spentToday - budget.todayAllowance) else Money.format(budget.leftToday),
@@ -380,7 +398,7 @@ private fun BudgetAlertsCard(alerts: List<BudgetStatus>, onOpen: () -> Unit) {
 }
 
 @Composable
-private fun SetupCard(state: HomeState, onSaveGoal: (income: Long, goal: Long) -> Unit) {
+private fun SetupCard(state: HomeState, onSaveGoal: (income: Long, goal: Long) -> Unit, onHide: () -> Unit) {
     var goal by remember { mutableStateOf(Money.toInput(state.settings.savingsGoalPaise).takeIf { state.settings.savingsGoalPaise > 0 } ?: "") }
     var income by remember { mutableStateOf("") }
     // Income is only asked once; after that it carries over from month to month.
@@ -397,7 +415,10 @@ private fun SetupCard(state: HomeState, onSaveGoal: (income: Long, goal: Long) -
         borderColor = Color.Transparent,
     ) {
         Column(Modifier.padding(20.dp)) {
-            Text("Savings goal this month", style = MaterialTheme.typography.titleLarge)
+            Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+                Text("Savings goal this month", style = MaterialTheme.typography.titleLarge, modifier = Modifier.weight(1f))
+                HideButton(onHide, MaterialTheme.colorScheme.onTertiaryContainer)
+            }
             Spacer(Modifier.height(16.dp))
             if (needsIncome) {
                 OutlinedTextField(
@@ -431,6 +452,13 @@ private fun SetupCard(state: HomeState, onSaveGoal: (income: Long, goal: Long) -
                 modifier = Modifier.fillMaxWidth().height(48.dp),
             ) { Text("Set goal", style = MaterialTheme.typography.titleSmall) }
         }
+    }
+}
+
+@Composable
+private fun HideButton(onHide: () -> Unit, tint: Color) {
+    IconButton(onClick = onHide, modifier = Modifier.size(24.dp)) {
+        Icon(Icons.Outlined.Close, contentDescription = "Hide daily limit and savings goal", tint = tint)
     }
 }
 

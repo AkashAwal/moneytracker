@@ -50,6 +50,7 @@ class QuickAddWidget : AppWidgetProvider() {
             val (amount, detail, over) = when {
                 // A home-screen widget is visible to anyone who sees the screen, so it shows no figures while the app lock is on.
                 settings.lockEnabled -> Triple("🔒 Locked", "Amounts hidden · tap + to add", false)
+                !settings.limitEnabled -> Triple("Spent ${Money.format(home.spent)}", "This month · tap + to add", false)
                 budget == null -> Triple("Set your goal", "Open the app to start", false)
                 budget.overToday -> Triple(
                     "Over by ${Money.format(budget.spentToday - budget.todayAllowance)}",

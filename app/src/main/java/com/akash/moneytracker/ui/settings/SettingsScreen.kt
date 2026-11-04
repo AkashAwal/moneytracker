@@ -71,11 +71,14 @@ fun SettingsScreen(
             SettingRow("Name", s.name?.ifBlank { null } ?: "Not set") { showName = true }
         }
 
-        Section("This month")
-        AppCard(Modifier.fillMaxWidth()) {
-            SettingRow("Expected income", if (s.expectedIncomePaise > 0) Money.format(s.expectedIncomePaise) else "Not set") { showGoal = true }
-            Hairline(Modifier.padding(start = 16.dp))
-            SettingRow("Savings goal", if (s.savingsGoalPaise > 0) Money.format(s.savingsGoalPaise) else "Not set") { showGoal = true }
+        // The daily limit is optional; it is switched on and off from the home screen only.
+        if (s.limitEnabled) {
+            Section("This month")
+            AppCard(Modifier.fillMaxWidth()) {
+                SettingRow("Expected income", if (s.expectedIncomePaise > 0) Money.format(s.expectedIncomePaise) else "Not set") { showGoal = true }
+                Hairline(Modifier.padding(start = 16.dp))
+                SettingRow("Savings goal", if (s.savingsGoalPaise > 0) Money.format(s.savingsGoalPaise) else "Not set") { showGoal = true }
+            }
         }
 
         Section("Plan")

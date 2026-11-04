@@ -28,6 +28,8 @@ data class Settings(
     val reminderMinute: Int = 21 * 60,
     val weeklySummaryEnabled: Boolean = false,
     val lockEnabled: Boolean = false,
+    /** Whether the daily spend limit and savings goal are shown. Off for people who only track expenses. */
+    val limitEnabled: Boolean = true,
 )
 
 class SettingsStore(private val context: Context) {
@@ -40,6 +42,7 @@ class SettingsStore(private val context: Context) {
         val reminderMinute = intPreferencesKey("reminder_minute")
         val weeklyEnabled = booleanPreferencesKey("weekly_summary_enabled")
         val lockEnabled = booleanPreferencesKey("lock_enabled")
+        val limitEnabled = booleanPreferencesKey("limit_enabled")
     }
 
     val settings: Flow<Settings> = context.dataStore.data.map { p ->
@@ -52,6 +55,7 @@ class SettingsStore(private val context: Context) {
             reminderMinute = p[Keys.reminderMinute] ?: (21 * 60),
             weeklySummaryEnabled = p[Keys.weeklyEnabled] ?: false,
             lockEnabled = p[Keys.lockEnabled] ?: false,
+            limitEnabled = p[Keys.limitEnabled] ?: true,
         )
     }
 
@@ -80,6 +84,10 @@ class SettingsStore(private val context: Context) {
 
     suspend fun setLock(enabled: Boolean) {
         context.dataStore.edit { it[Keys.lockEnabled] = enabled }
+    }
+
+    suspend fun setLimitEnabled(enabled: Boolean) {
+        context.dataStore.edit { it[Keys.limitEnabled] = enabled }
     }
 
     /** Restores the money-related settings from a backup; device switches are left as they are. */

@@ -174,6 +174,10 @@ class MainViewModel(
         viewModelScope.launch { settingsStore.setWeeklySummary(enabled) }
     }
 
+    fun setLimitEnabled(enabled: Boolean) {
+        viewModelScope.launch { settingsStore.setLimitEnabled(enabled) }
+    }
+
     fun setLock(enabled: Boolean) {
         viewModelScope.launch { settingsStore.setLock(enabled) }
     }

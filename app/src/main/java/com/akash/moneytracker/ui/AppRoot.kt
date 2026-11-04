@@ -237,6 +237,7 @@ fun AppRoot(vm: MainViewModel, quickAddSignal: Int) {
                 HomeScreen(
                     state = home,
                     onSaveGoal = vm::saveGoal,
+                    onSetLimitEnabled = vm::setLimitEnabled,
                     onSeeAll = { nav.navigate(Tab.Activity.route) },
                     onEdit = { sheet = SheetRequest(edit = it) },
                     onOpenBudgets = { nav.navigate(ROUTE_BUDGETS) },
