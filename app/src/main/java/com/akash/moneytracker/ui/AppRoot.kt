@@ -242,6 +242,7 @@ fun AppRoot(vm: MainViewModel, quickAddSignal: Int) {
                     onShowLimit = { vm.setDailyLimitHidden(false) },
                     onResetLimit = vm::resetDailyLimit,
                     onCheckIn = vm::checkInToday,
+                    onSaveIncome = vm::saveIncome,
                 )
             }
             composable(Tab.Activity.route) {
@@ -261,6 +262,7 @@ fun AppRoot(vm: MainViewModel, quickAddSignal: Int) {
                     budgetCount = home?.budgetLimits?.size ?: 0,
                     recurringCount = recurring.size,
                     onSaveGoal = vm::saveGoal,
+                    onSaveIncome = vm::saveIncome,
                     onSaveName = vm::saveName,
                     onOpenBudgets = { nav.navigate(ROUTE_BUDGETS) },
                     onOpenRecurring = { nav.navigate(ROUTE_RECURRING) },

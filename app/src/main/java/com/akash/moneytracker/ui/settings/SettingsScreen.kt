@@ -39,6 +39,7 @@ import com.akash.moneytracker.domain.timeLabel
 import com.akash.moneytracker.ui.components.AppCard
 import com.akash.moneytracker.ui.components.GoalDialog
 import com.akash.moneytracker.ui.components.Hairline
+import com.akash.moneytracker.ui.components.IncomeDialog
 import com.akash.moneytracker.ui.components.NameDialog
 import com.akash.moneytracker.ui.components.TimeDialog
 
@@ -48,6 +49,7 @@ fun SettingsScreen(
     budgetCount: Int,
     recurringCount: Int,
     onSaveGoal: (income: Long, goal: Long) -> Unit,
+    onSaveIncome: (Long) -> Unit,
     onSaveName: (String) -> Unit,
     onOpenBudgets: () -> Unit,
     onOpenRecurring: () -> Unit,
@@ -65,6 +67,7 @@ fun SettingsScreen(
     val s = state.settings
     var showGoal by remember { mutableStateOf(false) }
     var showName by remember { mutableStateOf(false) }
+    var showIncome by remember { mutableStateOf(false) }
     var showTime by remember { mutableStateOf(false) }
 
     Column(
@@ -82,12 +85,14 @@ fun SettingsScreen(
             SettingRow("Name", s.name?.ifBlank { null } ?: "Not set") { showName = true }
         }
 
-        // The daily limit is optional. Once it has been removed from Home, this is hidden too, and Home is the only
-        // place that turns it back on.
-        if (!s.dailyLimitHidden) {
-            Section("This month")
-            AppCard(Modifier.fillMaxWidth()) {
-                SettingRow("Expected income", if (s.expectedIncomePaise > 0) Money.format(s.expectedIncomePaise) else "Not set") { showGoal = true }
+        // Income is always here. The savings goal belongs to the optional daily limit, so it only shows while that
+        // is on; Home is the only place that turns the limit back on.
+        Section("This month")
+        AppCard(Modifier.fillMaxWidth()) {
+            SettingRow("Expected income", if (s.expectedIncomePaise > 0) Money.format(s.expectedIncomePaise) else "Not set") {
+                if (s.dailyLimitHidden) showIncome = true else showGoal = true
+            }
+            if (!s.dailyLimitHidden) {
                 Hairline(Modifier.padding(start = 16.dp))
                 SettingRow("Savings goal", if (s.savingsGoalPaise > 0) Money.format(s.savingsGoalPaise) else "Not set") { showGoal = true }
             }
@@ -165,6 +170,17 @@ fun SettingsScreen(
             onPick = {
                 onReminderTime(it)
                 showTime = false
+            },
+        )
+    }
+
+    if (showIncome) {
+        IncomeDialog(
+            initialIncomePaise = s.expectedIncomePaise,
+            onDismiss = { showIncome = false },
+            onSave = {
+                onSaveIncome(it)
+                showIncome = false
             },
         )
     }

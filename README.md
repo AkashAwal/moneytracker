@@ -111,7 +111,7 @@ Everything else (charts, budgets, recurring bills, reminders) exists to make tha
 - **Password-protected backup and restore**, so moving to a new phone takes a minute.
 
 ### 🔐 Locked down
-- **App lock** with your fingerprint, face or phone PIN; amounts hidden from screenshots, the recent-apps view, the widget and the lock screen. [Details below.](#-security-and-privacy)
+- **App lock** with your fingerprint, face or phone PIN; amounts kept off the widget and the lock screen (screenshots and screen sharing still work). [Details below.](#-security-and-privacy)
 
 ## 🧮 How the daily limit works
 
@@ -159,7 +159,7 @@ everything that comes in. The full write-up, including **what it does *not* prot
 
 | Threat | Protection |
 |---|---|
-| Phone left unlocked | App lock (strong biometrics or the phone PIN), re-locks after 30 s, hidden from recents and screenshots |
+| Phone left unlocked | App lock (strong biometrics or the phone PIN), re-locks after 30 s |
 | Another app, malware | Android sandbox; nothing exported that hands out data; **no internet permission** |
 | USB / cloud backup extraction | `allowBackup=false`, empty data-extraction rules, non-debuggable release |
 | A backup file leaks | **AES-256-GCM** with a PBKDF2 key (600,000 iterations); tampering is detected |

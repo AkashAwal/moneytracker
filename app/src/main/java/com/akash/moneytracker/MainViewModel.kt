@@ -187,6 +187,11 @@ class MainViewModel(
         }
     }
 
+    /** Just the monthly income; no savings goal needed. */
+    fun saveIncome(incomePaise: Long) {
+        viewModelScope.launch { settingsStore.saveIncome(incomePaise) }
+    }
+
     fun setReminder(enabled: Boolean, minuteOfDay: Int) {
         viewModelScope.launch { settingsStore.setReminder(enabled, minuteOfDay) }
     }

@@ -74,10 +74,8 @@ class MainActivity : FragmentActivity() {
             val first = settings.first()
             lockEnabled = first.lockEnabled
             settings.map { it.lockEnabled }.distinctUntilChanged().collect { enabled ->
+                // Screenshots and screen sharing are deliberately allowed, lock or no lock.
                 lockEnabled = enabled
-                // Keeps balances out of the recent-apps preview and screenshots while the lock is on.
-                if (enabled) window.addFlags(WindowManager.LayoutParams.FLAG_SECURE)
-                else window.clearFlags(WindowManager.LayoutParams.FLAG_SECURE)
             }
         }
 

@@ -82,6 +82,11 @@ class SettingsStore(private val context: Context) {
         }
     }
 
+    /** Income on its own, for people who don't want a savings goal: Income, Spent and Left still work from it. */
+    suspend fun saveIncome(incomePaise: Long) {
+        context.dataStore.edit { it[Keys.income] = incomePaise }
+    }
+
     /** Back to "no goal set": the setup card on Home then starts empty. */
     suspend fun resetGoal() {
         context.dataStore.edit {
