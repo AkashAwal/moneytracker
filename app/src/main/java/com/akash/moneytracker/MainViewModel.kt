@@ -17,6 +17,8 @@ import com.akash.moneytracker.domain.monthKey
 import com.akash.moneytracker.data.SuggestionEntity
 import com.akash.moneytracker.domain.Money
 import com.akash.moneytracker.sms.SmsParser
+import com.akash.moneytracker.domain.Tags
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.SharedFlow
@@ -24,8 +26,11 @@ import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.distinctUntilChanged
+import kotlinx.coroutines.flow.filterNotNull
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.flow
+import kotlinx.coroutines.flow.flowOn
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import java.time.LocalDate
@@ -65,10 +70,26 @@ class MainViewModel(
         Planning(budgets.associate { it.categoryId to it.limitPaise }, rules.map { it.rule }, categories)
     }
 
+    /**
+     * Built from the one shared [transactions] query (not a second and third copy of it), and calculated on a
+     * background thread: with a long history, doing this on the main thread froze the app after every
+     * delete or new category, because each of those re-reads and re-totals the whole table.
+     */
     val home: StateFlow<HomeState?> =
-        combine(settingsStore.settings, repo.allTransactions(), today, planning, repo.suggestions()) { s, all, today, plan, suggestions ->
+        combine(settingsStore.settings, transactions.filterNotNull(), today, planning, repo.suggestions()) { s, all, today, plan, suggestions ->
             computeHome(s, all, today, plan, suggestions)
-        }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), null)
+        }.flowOn(Dispatchers.Default).stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), null)
+
+    /** Tags used most often, offered as quick picks in the add sheet. Worked out off the main thread. */
+    val knownTags: StateFlow<List<String>> = transactions
+        .filterNotNull()
+        .map { rows ->
+            rows.flatMap { Tags.decode(it.tx.tags) }
+                .groupingBy { it }.eachCount()
+                .entries.sortedByDescending { it.value }.map { it.key }.take(12)
+        }
+        .flowOn(Dispatchers.Default)
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), emptyList())
 
     fun save(tx: TransactionEntity) {
         viewModelScope.launch { repo.save(tx) }
@@ -172,6 +193,20 @@ class MainViewModel(
 
     fun setWeeklySummary(enabled: Boolean) {
         viewModelScope.launch { settingsStore.setWeeklySummary(enabled) }
+    }
+
+    /** Removes (or brings back) the daily limit on Home; the goal and income are kept. */
+    fun setDailyLimitHidden(hidden: Boolean) {
+        viewModelScope.launch { settingsStore.setDailyLimitHidden(hidden) }
+    }
+
+    /** "I spent nothing today": counts as logging so a quiet day doesn't break the streak. */
+    fun checkInToday() {
+        viewModelScope.launch { settingsStore.checkIn(LocalDate.now().toEpochDay()) }
+    }
+
+    fun setThemeMode(mode: Int) {
+        viewModelScope.launch { settingsStore.setThemeMode(mode) }
     }
 
     fun setLock(enabled: Boolean) {

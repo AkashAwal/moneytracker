@@ -28,7 +28,6 @@ import androidx.compose.material3.NavigationBar
 import androidx.compose.material3.NavigationBarItem
 import androidx.compose.material3.NavigationBarItemDefaults
 import androidx.compose.material3.Scaffold
-import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.SnackbarResult
 import androidx.compose.material3.Text
@@ -74,6 +73,8 @@ import com.akash.moneytracker.lock.AppLock
 import com.akash.moneytracker.ui.add.AddTransactionSheet
 import com.akash.moneytracker.ui.analytics.AnalyticsScreen
 import com.akash.moneytracker.ui.components.NameDialog
+import com.akash.moneytracker.ui.components.SwipeAwaySnackbarHost
+import com.akash.moneytracker.ui.components.showFor
 import com.akash.moneytracker.ui.home.HomeScreen
 import com.akash.moneytracker.ui.settings.BudgetsScreen
 import com.akash.moneytracker.ui.settings.RecurringScreen
@@ -132,17 +133,12 @@ fun AppRoot(vm: MainViewModel, quickAddSignal: Int) {
         if (quickAddSignal > 0) sheet = SheetRequest()
     }
 
-    val knownTags = remember(transactions) {
-        transactions.orEmpty()
-            .flatMap { Tags.decode(it.tx.tags) }
-            .groupingBy { it }.eachCount()
-            .entries.sortedByDescending { it.value }.map { it.key }.take(12)
-    }
+    val knownTags by vm.knownTags.collectAsStateWithLifecycle()
 
     fun say(message: String) {
         scope.launch {
             snackbar.currentSnackbarData?.dismiss()
-            snackbar.showSnackbar(message)
+            snackbar.showFor(message)
         }
     }
 
@@ -153,7 +149,7 @@ fun AppRoot(vm: MainViewModel, quickAddSignal: Int) {
         vm.delete(tx)
         scope.launch {
             snackbar.currentSnackbarData?.dismiss()
-            if (snackbar.showSnackbar("Transaction deleted", actionLabel = "Undo") == SnackbarResult.ActionPerformed) {
+            if (snackbar.showFor("Transaction deleted", actionLabel = "Undo") == SnackbarResult.ActionPerformed) {
                 vm.restore(tx)
             }
         }
@@ -214,7 +210,7 @@ fun AppRoot(vm: MainViewModel, quickAddSignal: Int) {
         containerColor = MaterialTheme.colorScheme.background,
         // Each screen applies the status-bar inset itself; letting the Scaffold add it too doubled the top gap.
         contentWindowInsets = WindowInsets(0, 0, 0, 0),
-        snackbarHost = { SnackbarHost(snackbar) },
+        snackbarHost = { SwipeAwaySnackbarHost(snackbar) },
         bottomBar = {
             NavigationBar(
                 containerColor = MaterialTheme.colorScheme.surface,
@@ -242,6 +238,9 @@ fun AppRoot(vm: MainViewModel, quickAddSignal: Int) {
                     onOpenBudgets = { nav.navigate(ROUTE_BUDGETS) },
                     onReviewSuggestion = { sheet = SheetRequest(suggestion = it) },
                     onDismissSuggestion = vm::dismissSuggestion,
+                    onHideLimit = { vm.setDailyLimitHidden(true) },
+                    onShowLimit = { vm.setDailyLimitHidden(false) },
+                    onCheckIn = vm::checkInToday,
                 )
             }
             composable(Tab.Activity.route) {
@@ -286,6 +285,7 @@ fun AppRoot(vm: MainViewModel, quickAddSignal: Int) {
                             else -> AppLock.prompt(activity, "Turn on app lock", { vm.setLock(true) }, ::say)
                         }
                     },
+                    onThemeMode = vm::setThemeMode,
                     onPasteBankText = {
                         // Read only when the user taps the button; Android shows its own "pasted from clipboard" notice.
                         val copied = clipboard.getText()?.text.orEmpty()

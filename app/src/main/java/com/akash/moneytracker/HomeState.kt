@@ -86,17 +86,18 @@ fun computeHome(
         income = income,
         spent = spent,
         needsSetup = needsSetup,
-        budget = if (needsSetup) null else {
+        // The daily limit is optional: once removed from Home it shows nowhere (widget and reminders included).
+        budget = if (needsSetup || settings.dailyLimitHidden) null else {
             DailyBudget.compute(income, settings.savingsGoalPaise, dailySpent, dailySpentToday, today, reserved)
         },
         recent = all.take(5),
         budgetAlerts = alerts,
         budgetLimits = plan.budgets,
         categorySpend = categorySpend,
-        forecast = if (needsSetup) null else {
+        forecast = if (needsSetup || settings.dailyLimitHidden) null else {
             Forecast.compute(income, settings.savingsGoalPaise, dailySpent, reserved, today)
         },
-        streaks = StreakCalc.compute(all, today),
+        streaks = StreakCalc.compute(all, today, settings.checkInDays),
         suggestions = suggestions,
     )
 }

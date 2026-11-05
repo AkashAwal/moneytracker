@@ -8,6 +8,7 @@ import androidx.datastore.preferences.core.edit
 import androidx.datastore.preferences.core.intPreferencesKey
 import androidx.datastore.preferences.core.longPreferencesKey
 import androidx.datastore.preferences.core.stringPreferencesKey
+import androidx.datastore.preferences.core.stringSetPreferencesKey
 import androidx.datastore.preferences.preferencesDataStore
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
@@ -22,12 +23,18 @@ data class Settings(
     val goalMonth: Int = 0,
     /** null = never asked, "" = the user skipped it. */
     val name: String? = null,
+    /** The daily limit and savings forecast are optional: true while the user has removed them from Home. */
+    val dailyLimitHidden: Boolean = false,
+    /** Days (epoch days) the user marked "spent nothing", so a quiet day keeps the logging streak alive. */
+    val checkInDays: Set<Long> = emptySet(),
     // Device-level switches. These are not part of a backup, so restoring never changes them.
     val reminderEnabled: Boolean = false,
     /** Minutes after midnight for the daily "log your expenses" nudge. */
     val reminderMinute: Int = 21 * 60,
     val weeklySummaryEnabled: Boolean = false,
     val lockEnabled: Boolean = false,
+    /** 0 = follow the phone, 1 = light, 2 = dark. */
+    val themeMode: Int = 0,
 )
 
 class SettingsStore(private val context: Context) {
@@ -40,6 +47,9 @@ class SettingsStore(private val context: Context) {
         val reminderMinute = intPreferencesKey("reminder_minute")
         val weeklyEnabled = booleanPreferencesKey("weekly_summary_enabled")
         val lockEnabled = booleanPreferencesKey("lock_enabled")
+        val themeMode = intPreferencesKey("theme_mode")
+        val dailyLimitHidden = booleanPreferencesKey("daily_limit_hidden")
+        val checkInDays = stringSetPreferencesKey("check_in_days")
     }
 
     val settings: Flow<Settings> = context.dataStore.data.map { p ->
@@ -48,10 +58,13 @@ class SettingsStore(private val context: Context) {
             savingsGoalPaise = p[Keys.goal] ?: 0,
             goalMonth = p[Keys.goalMonth] ?: 0,
             name = p[Keys.name],
+            dailyLimitHidden = p[Keys.dailyLimitHidden] ?: false,
+            checkInDays = p[Keys.checkInDays].orEmpty().mapNotNull { it.toLongOrNull() }.toSet(),
             reminderEnabled = p[Keys.reminderEnabled] ?: false,
             reminderMinute = p[Keys.reminderMinute] ?: (21 * 60),
             weeklySummaryEnabled = p[Keys.weeklyEnabled] ?: false,
             lockEnabled = p[Keys.lockEnabled] ?: false,
+            themeMode = p[Keys.themeMode] ?: 0,
         )
     }
 
@@ -59,11 +72,25 @@ class SettingsStore(private val context: Context) {
         context.dataStore.edit { it[Keys.name] = name.trim() }
     }
 
+    /** Setting a goal means the user wants the daily limit, so it also brings the card back if it was removed. */
     suspend fun saveGoal(incomePaise: Long, goalPaise: Long, month: Int) {
         context.dataStore.edit {
             it[Keys.income] = incomePaise
             it[Keys.goal] = goalPaise
             it[Keys.goalMonth] = month
+            it[Keys.dailyLimitHidden] = false
+        }
+    }
+
+    suspend fun setDailyLimitHidden(hidden: Boolean) {
+        context.dataStore.edit { it[Keys.dailyLimitHidden] = hidden }
+    }
+
+    /** Marks [epochDay] as a day with nothing to log. Only recent days are kept: older ones can't affect a streak. */
+    suspend fun checkIn(epochDay: Long) {
+        context.dataStore.edit { p ->
+            val kept = p[Keys.checkInDays].orEmpty().mapNotNull { it.toLongOrNull() }.filter { it > epochDay - CHECK_IN_KEEP_DAYS }
+            p[Keys.checkInDays] = (kept + epochDay).map { it.toString() }.toSet()
         }
     }
 
@@ -78,6 +105,10 @@ class SettingsStore(private val context: Context) {
         context.dataStore.edit { it[Keys.weeklyEnabled] = enabled }
     }
 
+    suspend fun setThemeMode(mode: Int) {
+        context.dataStore.edit { it[Keys.themeMode] = mode.coerceIn(0, 2) }
+    }
+
     suspend fun setLock(enabled: Boolean) {
         context.dataStore.edit { it[Keys.lockEnabled] = enabled }
     }
@@ -89,6 +120,13 @@ class SettingsStore(private val context: Context) {
             it[Keys.goal] = s.savingsGoalPaise
             it[Keys.goalMonth] = s.goalMonth
             if (s.name != null) it[Keys.name] = s.name else it.remove(Keys.name)
+            it[Keys.dailyLimitHidden] = s.dailyLimitHidden
+            it[Keys.checkInDays] = s.checkInDays.map { d -> d.toString() }.toSet()
         }
+    }
+
+    private companion object {
+        /** Check-ins older than this can't be part of a streak anyone is still on. */
+        const val CHECK_IN_KEEP_DAYS = 800L
     }
 }

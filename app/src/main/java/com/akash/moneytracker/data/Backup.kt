@@ -26,6 +26,7 @@ object BackupLimits {
     const val MAX_CATEGORIES = 500
     const val MAX_BUDGETS = 500
     const val MAX_RECURRING = 500
+    const val MAX_CHECK_INS = 5_000
 
     /** ₹1,00,000 crore expressed in paise; far above any real balance, far below Long overflow when summed. */
     const val MAX_PAISE = 100_000_000_000_000L
@@ -52,7 +53,9 @@ object Backup {
                     .put("name", s.settings.name ?: JSONObject.NULL)
                     .put("expectedIncomePaise", s.settings.expectedIncomePaise)
                     .put("savingsGoalPaise", s.settings.savingsGoalPaise)
-                    .put("goalMonth", s.settings.goalMonth),
+                    .put("goalMonth", s.settings.goalMonth)
+                    .put("dailyLimitHidden", s.settings.dailyLimitHidden)
+                    .put("checkInDays", JSONArray(s.settings.checkInDays.sorted())),
             )
             .put("categories", JSONArray(s.categories.map {
                 JSONObject().put("id", it.id).put("name", it.name).put("emoji", it.emoji).put("color", it.color)
@@ -91,6 +94,14 @@ object Backup {
                 savingsGoalPaise = st.optLong("savingsGoalPaise").also { bad(it !in 0..BackupLimits.MAX_PAISE, "savings goal") },
                 goalMonth = st.optInt("goalMonth").also { bad(it != 0 && !validMonth(it), "goal month") },
                 name = if (st.isNull("name")) null else st.getString("name").clean(60),
+                // Both are absent in backups made before they existed.
+                dailyLimitHidden = st.optBoolean("dailyLimitHidden"),
+                checkInDays = st.optJSONArray("checkInDays")?.let { days ->
+                    bad(days.length() > BackupLimits.MAX_CHECK_INS, "no-spend days")
+                    List(days.length()) { days.getLong(it) }
+                        .also { all -> bad(all.any { d -> d !in BackupLimits.EPOCH_DAYS }, "no-spend day") }
+                        .toSet()
+                } ?: emptySet(),
             )
 
             val categoryArray = root.getJSONArray("categories").also { bad(it.length() > BackupLimits.MAX_CATEGORIES, "categories") }

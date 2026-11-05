@@ -5,8 +5,12 @@ import android.os.Build
 import android.os.Bundle
 import android.os.SystemClock
 import android.view.WindowManager
+import android.graphics.Color
+import androidx.activity.SystemBarStyle
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
+import androidx.compose.foundation.isSystemInDarkTheme
+import androidx.compose.runtime.DisposableEffect
 import androidx.activity.viewModels
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
@@ -44,6 +48,9 @@ class MainActivity : FragmentActivity() {
     private var locked by mutableStateOf<Boolean?>(null)
     private var lockMessage by mutableStateOf<String?>(null)
     private var lockEnabled = false
+
+    /** 0 = follow the phone, 1 = light, 2 = dark (see Settings.themeMode). */
+    private var themeMode by mutableIntStateOf(0)
     private var stoppedAt = 0L
 
     /** Bumped each time the widget, tile or shortcut asks for the add sheet to open. */
@@ -57,8 +64,15 @@ class MainActivity : FragmentActivity() {
 
         val settings = (application as MoneyTrackerApp).settingsStore.settings
         lifecycleScope.launch {
-            lockEnabled = settings.first().lockEnabled
+            val first = settings.first()
+            lockEnabled = first.lockEnabled
+            themeMode = first.themeMode
             locked = lockEnabled
+            settings.map { it.themeMode }.distinctUntilChanged().collect { themeMode = it }
+        }
+        lifecycleScope.launch {
+            val first = settings.first()
+            lockEnabled = first.lockEnabled
             settings.map { it.lockEnabled }.distinctUntilChanged().collect { enabled ->
                 lockEnabled = enabled
                 // Keeps balances out of the recent-apps preview and screenshots while the lock is on.
@@ -68,7 +82,18 @@ class MainActivity : FragmentActivity() {
         }
 
         setContent {
-            MoneyTrackerTheme {
+            val dark = when (themeMode) {
+                1 -> false
+                2 -> true
+                else -> isSystemInDarkTheme()
+            }
+            // Status- and navigation-bar icons must contrast with the app's theme, which may differ from the phone's.
+            DisposableEffect(dark) {
+                val bar = SystemBarStyle.auto(Color.TRANSPARENT, Color.TRANSPARENT) { dark }
+                enableEdgeToEdge(statusBarStyle = bar, navigationBarStyle = bar)
+                onDispose {}
+            }
+            MoneyTrackerTheme(darkTheme = dark) {
                 when (locked) {
                     null -> Box(Modifier.fillMaxSize().background(MaterialTheme.colorScheme.background))
                     true -> LockScreen(message = lockMessage, onUnlock = ::promptUnlock)

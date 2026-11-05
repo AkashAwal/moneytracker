@@ -71,11 +71,14 @@ class ReminderWorker(context: Context, params: WorkerParameters) : CoroutineWork
 
         val today = LocalDate.now()
         val all = app.repository.allOnce()
-        val loggedToday = all.any { it.tx.epochDay == today.toEpochDay() && it.tx.recurringId == null }
+        // A "spent nothing today" check-in counts as logging, so the reminder stays quiet after one.
+        val loggedToday = all.any { it.tx.epochDay == today.toEpochDay() && it.tx.recurringId == null } ||
+            today.toEpochDay() in settings.checkInDays
         if (!loggedToday) {
             val home = computeHome(settings, all, today, app.repository.planningOnce())
             val text = when {
-                home.streaks.loggingStreak > 1 -> "Log something today to keep your ${home.streaks.loggingStreak}-day streak going 🔥"
+                home.streaks.loggingStreak > 1 ->
+                    "Log something, or mark a no-spend day, to keep your ${home.streaks.loggingStreak}-day streak going 🔥"
                 home.budget != null && !home.budget.overToday -> "You can still spend ${Money.format(home.budget.leftToday)} today. Anything to log?"
                 else -> "Anything to log today?"
             }

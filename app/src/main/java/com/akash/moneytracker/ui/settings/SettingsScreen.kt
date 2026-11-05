@@ -10,7 +10,13 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.SegmentedButton
+import androidx.compose.material3.SegmentedButtonDefaults
+import androidx.compose.material3.SingleChoiceSegmentedButtonRow
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.height
 import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -46,6 +52,7 @@ fun SettingsScreen(
     onToggleWeekly: (Boolean) -> Unit,
     onToggleLock: (Boolean) -> Unit,
     onPasteBankText: () -> Unit,
+    onThemeMode: (Int) -> Unit,
     onBackup: () -> Unit,
     onRestore: () -> Unit,
     onExportCsv: () -> Unit,
@@ -71,11 +78,20 @@ fun SettingsScreen(
             SettingRow("Name", s.name?.ifBlank { null } ?: "Not set") { showName = true }
         }
 
-        Section("This month")
+        // The daily limit is optional. Once it has been removed from Home, this is hidden too, and Home is the only
+        // place that turns it back on.
+        if (!s.dailyLimitHidden) {
+            Section("This month")
+            AppCard(Modifier.fillMaxWidth()) {
+                SettingRow("Expected income", if (s.expectedIncomePaise > 0) Money.format(s.expectedIncomePaise) else "Not set") { showGoal = true }
+                Hairline(Modifier.padding(start = 16.dp))
+                SettingRow("Savings goal", if (s.savingsGoalPaise > 0) Money.format(s.savingsGoalPaise) else "Not set") { showGoal = true }
+            }
+        }
+
+        Section("Appearance")
         AppCard(Modifier.fillMaxWidth()) {
-            SettingRow("Expected income", if (s.expectedIncomePaise > 0) Money.format(s.expectedIncomePaise) else "Not set") { showGoal = true }
-            Hairline(Modifier.padding(start = 16.dp))
-            SettingRow("Savings goal", if (s.savingsGoalPaise > 0) Money.format(s.savingsGoalPaise) else "Not set") { showGoal = true }
+            ThemePicker(s.themeMode, onThemeMode)
         }
 
         Section("Plan")
@@ -157,6 +173,31 @@ fun SettingsScreen(
                 onSaveGoal(income, goal)
                 showGoal = false
             },
+        )
+    }
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun ThemePicker(mode: Int, onChange: (Int) -> Unit) {
+    val options = listOf("System", "Light", "Dark")
+    Column(Modifier.padding(16.dp)) {
+        Text("Theme", style = MaterialTheme.typography.bodyLarge)
+        Spacer(Modifier.height(10.dp))
+        SingleChoiceSegmentedButtonRow(Modifier.fillMaxWidth()) {
+            options.forEachIndexed { i, label ->
+                SegmentedButton(
+                    selected = mode == i,
+                    onClick = { onChange(i) },
+                    shape = SegmentedButtonDefaults.itemShape(i, options.size),
+                ) { Text(label) }
+            }
+        }
+        Spacer(Modifier.height(6.dp))
+        Text(
+            if (mode == 0) "Follows your phone's light or dark setting." else "Always ${options[mode].lowercase()}, whatever the phone is set to.",
+            style = MaterialTheme.typography.bodySmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
         )
     }
 }

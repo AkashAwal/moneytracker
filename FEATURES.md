@@ -13,6 +13,7 @@ Kotlin, Jetpack Compose + Material 3, Room, DataStore, MVVM (ViewModel + StateFl
 - [x] Analytics: top items by spend
 - [x] Monthly savings goal prompt
 - [x] Persistent daily spend limit card: `(income - savings_goal - fixed_expenses - spent_so_far) / days_remaining`, recalculated daily, red when exceeded
+- [x] The daily limit is optional: a cross on the card removes it (and the forecast, and its Settings entries); Home shows a "Track a daily spending limit" prompt that brings it back. It is the only way back, and the goal and income are kept
 - [x] PDF export (monthly report: summary, charts, patterns, top items, all transactions)
 - [x] PNG export of each chart card (via the share sheet)
 
@@ -23,12 +24,12 @@ Kotlin, Jetpack Compose + Material 3, Room, DataStore, MVVM (ViewModel + StateFl
 - [x] Income tracking
 - [x] Search and filter (text, type, category, date range, amount)
 - [x] Biometric or PIN app lock (uses the phone's own screen lock; locks after 1 minute away)
-- [x] Dark mode (dynamic color not used, fixed brand palette)
+- [x] Dark mode, with a System / Light / Dark switch in Settings → Appearance
 - [ ] Currency setting (skipped: the app is INR only)
-- [x] Undo on delete
+- [x] Undo on delete (the message clears itself after 5 seconds, or swipe it away)
 
 ## Nice to have
-- [x] Streaks and no-spend day counter
+- [x] Streaks and no-spend day counter; a "Spent nothing today" button counts a quiet day as logged so it doesn't break the streak
 - [x] Weekly summary notification (Sundays 8 PM)
 - [x] Daily "log your expenses" reminder (time is configurable; skipped if you already logged today)
 - [x] Notes on a transaction (receipt photo: not planned)

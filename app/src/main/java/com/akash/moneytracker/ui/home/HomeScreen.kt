@@ -3,7 +3,11 @@ package com.akash.moneytracker.ui.home
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.IntrinsicSize
 import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.fillMaxHeight
+import androidx.compose.foundation.layout.offset
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.RowScope
 import androidx.compose.foundation.layout.Spacer
@@ -67,6 +71,11 @@ fun HomeScreen(
     onOpenBudgets: () -> Unit,
     onReviewSuggestion: (SuggestionEntity) -> Unit,
     onDismissSuggestion: (Long) -> Unit,
+    /** Removes the daily limit from Home; it only comes back through [onShowLimit], on this screen. */
+    onHideLimit: () -> Unit,
+    onShowLimit: () -> Unit,
+    /** "I spent nothing today": keeps the logging streak going on a day with nothing to log. */
+    onCheckIn: () -> Unit,
 ) {
     if (state == null) return
     var showGoal by remember { mutableStateOf(false) }
@@ -91,7 +100,13 @@ fun HomeScreen(
             }
         }
         item {
-            DailyLimitCard(state = state, onSetGoal = { showGoal = true }, onSaveGoal = onSaveGoal)
+            DailyLimitCard(
+                state = state,
+                onSetGoal = { showGoal = true },
+                onSaveGoal = onSaveGoal,
+                onHide = onHideLimit,
+                onShow = onShowLimit,
+            )
         }
         if (state.suggestions.isNotEmpty()) {
             item { SuggestionsCard(state.suggestions, state.today, onReviewSuggestion, onDismissSuggestion) }
@@ -114,14 +129,29 @@ fun HomeScreen(
             }
         }
         item {
-            Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+            Row(Modifier.height(IntrinsicSize.Min), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
                 val streak = state.streaks
                 StatCard(
                     "Logging streak",
                     if (streak.loggingStreak == 0) "Log today" else "🔥 ${streak.loggingStreak} ${if (streak.loggingStreak == 1) "day" else "days"}",
-                    Modifier.weight(1f),
+                    Modifier.weight(1f).fillMaxHeight(),
+                    // A day with no spending has nothing to log, so it gets its own way to keep the streak.
+                    footer = if (streak.loggedToday) null else {
+                        {
+                            TextButton(
+                                onClick = onCheckIn,
+                                contentPadding = PaddingValues(0.dp),
+                                modifier = Modifier.height(28.dp),
+                            ) { Text("Spent nothing today", style = MaterialTheme.typography.labelMedium) }
+                        }
+                    },
                 )
-                StatCard("No-spend days", "🌿 ${streak.noSpendDays} this month", Modifier.weight(1f))
+                // Finished days this month on which no day-to-day spending was logged (today isn't counted until it ends).
+                StatCard(
+                    "No-spend this month",
+                    "🌿 ${streak.noSpendDays} ${if (streak.noSpendDays == 1) "day" else "days"}",
+                    Modifier.weight(1f).fillMaxHeight(),
+                )
             }
         }
         item {
@@ -242,12 +272,14 @@ private fun StatCard(
     value: String,
     modifier: Modifier = Modifier,
     valueColor: Color = MaterialTheme.colorScheme.onSurface,
+    footer: (@Composable () -> Unit)? = null,
 ) {
     AppCard(modifier) {
         Column(Modifier.padding(horizontal = 14.dp, vertical = 12.dp)) {
             Text(label, style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
             Spacer(Modifier.height(2.dp))
             Text(value, style = MaterialTheme.typography.titleMedium, color = valueColor, maxLines = 1)
+            footer?.invoke()
         }
     }
 }
@@ -257,10 +289,17 @@ private fun DailyLimitCard(
     state: HomeState,
     onSetGoal: () -> Unit,
     onSaveGoal: (income: Long, goal: Long) -> Unit,
+    onHide: () -> Unit,
+    onShow: () -> Unit,
 ) {
+    // Optional feature: not everyone wants a savings target or a red warning on their home screen.
+    if (state.settings.dailyLimitHidden) {
+        ShowLimitPrompt(onShow)
+        return
+    }
     val budget = state.budget
     if (budget == null) {
-        SetupCard(state, onSaveGoal)
+        SetupCard(state, onSaveGoal, onHide)
         return
     }
 
@@ -274,12 +313,16 @@ private fun DailyLimitCard(
         borderColor = Color.Transparent,
         onClick = onSetGoal,
     ) {
-        Column(Modifier.padding(20.dp)) {
-            Text(
-                if (budget.overToday) "Over today's limit" else "You can spend today",
-                style = MaterialTheme.typography.labelLarge,
-                color = accent,
-            )
+        Column(Modifier.padding(start = 20.dp, end = 20.dp, bottom = 20.dp)) {
+            Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+                Text(
+                    if (budget.overToday) "Over today's limit" else "You can spend today",
+                    style = MaterialTheme.typography.labelLarge,
+                    color = accent,
+                    modifier = Modifier.weight(1f).padding(top = 20.dp),
+                )
+                HideButton(onHide, tint = accent)
+            }
             Spacer(Modifier.height(4.dp))
             Text(
                 text = if (budget.overToday) Money.format(budget.spentToday - budget.todayAllowance) else Money.format(budget.leftToday),
@@ -379,8 +422,41 @@ private fun BudgetAlertsCard(alerts: List<BudgetStatus>, onOpen: () -> Unit) {
     }
 }
 
+/** The cross on the daily limit: removes it from Home until the user asks for it again on this screen. */
 @Composable
-private fun SetupCard(state: HomeState, onSaveGoal: (income: Long, goal: Long) -> Unit) {
+private fun HideButton(onClick: () -> Unit, tint: Color) {
+    IconButton(onClick = onClick, modifier = Modifier.size(48.dp).offset(x = 12.dp)) {
+        Icon(
+            Icons.Outlined.Close,
+            contentDescription = "Remove daily limit from Home",
+            tint = tint.copy(alpha = 0.7f),
+            modifier = Modifier.size(20.dp),
+        )
+    }
+}
+
+/** What Home shows in place of the daily limit once it has been removed. */
+@Composable
+private fun ShowLimitPrompt(onShow: () -> Unit) {
+    AppCard(Modifier.fillMaxWidth(), onClick = onShow) {
+        Column(Modifier.padding(horizontal = 16.dp, vertical = 14.dp)) {
+            Text(
+                "＋  Track a daily spending limit",
+                style = MaterialTheme.typography.titleSmall,
+                color = MaterialTheme.colorScheme.primary,
+            )
+            Spacer(Modifier.height(2.dp))
+            Text(
+                "Optional. Set a savings goal and see how much you can spend each day.",
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+        }
+    }
+}
+
+@Composable
+private fun SetupCard(state: HomeState, onSaveGoal: (income: Long, goal: Long) -> Unit, onHide: () -> Unit) {
     var goal by remember { mutableStateOf(Money.toInput(state.settings.savingsGoalPaise).takeIf { state.settings.savingsGoalPaise > 0 } ?: "") }
     var income by remember { mutableStateOf("") }
     // Income is only asked once; after that it carries over from month to month.
@@ -396,8 +472,15 @@ private fun SetupCard(state: HomeState, onSaveGoal: (income: Long, goal: Long) -
         containerColor = MaterialTheme.colorScheme.tertiaryContainer,
         borderColor = Color.Transparent,
     ) {
-        Column(Modifier.padding(20.dp)) {
-            Text("Savings goal this month", style = MaterialTheme.typography.titleLarge)
+        Column(Modifier.padding(start = 20.dp, end = 20.dp, bottom = 20.dp)) {
+            Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+                Text(
+                    "Savings goal this month",
+                    style = MaterialTheme.typography.titleLarge,
+                    modifier = Modifier.weight(1f).padding(top = 20.dp),
+                )
+                HideButton(onHide, tint = MaterialTheme.colorScheme.onTertiaryContainer)
+            }
             Spacer(Modifier.height(16.dp))
             if (needsIncome) {
                 OutlinedTextField(

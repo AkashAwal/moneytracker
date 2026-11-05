@@ -50,6 +50,8 @@ class QuickAddWidget : AppWidgetProvider() {
             val (amount, detail, over) = when {
                 // A home-screen widget is visible to anyone who sees the screen, so it shows no figures while the app lock is on.
                 settings.lockEnabled -> Triple("🔒 Locked", "Amounts hidden · tap + to add", false)
+                // The daily limit is optional; once removed in the app, the widget is just a quick-add button.
+                settings.dailyLimitHidden -> Triple("Money Tracker", "Tap + to log a transaction", false)
                 budget == null -> Triple("Set your goal", "Open the app to start", false)
                 budget.overToday -> Triple(
                     "Over by ${Money.format(budget.spentToday - budget.todayAllowance)}",

@@ -28,8 +28,10 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.rememberSwipeToDismissBoxState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.key
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -117,8 +119,12 @@ fun TransactionsScreen(
                     item(key = "group-$day") {
                         AppCard(Modifier.fillMaxWidth()) {
                             items.forEachIndexed { i, item ->
-                                if (i > 0) Hairline(Modifier.padding(start = 72.dp))
-                                SwipeRow(item, onEdit, onDelete)
+                                // Keyed by id: swipe state must follow the transaction, not its position in the list.
+                                // Otherwise, after a delete, the next row inherits "already swiped away" and looks stuck.
+                                key(item.tx.id) {
+                                    if (i > 0) Hairline(Modifier.padding(start = 72.dp))
+                                    SwipeRow(item, onEdit, onDelete)
+                                }
                             }
                         }
                     }
@@ -164,10 +170,13 @@ private fun SwipeRow(
     onEdit: (TransactionEntity) -> Unit,
     onDelete: (TransactionEntity) -> Unit,
 ) {
+    // The swipe state outlives edits to this row, so read the latest values when it fires. Otherwise deleting
+    // an edited transaction and tapping Undo would bring back the old, pre-edit amount.
+    val latest by rememberUpdatedState(item)
     val state = rememberSwipeToDismissBoxState(
         confirmValueChange = { value ->
             if (value == SwipeToDismissBoxValue.EndToStart) {
-                onDelete(item.tx)
+                onDelete(latest.tx)
                 true
             } else false
         },

@@ -59,7 +59,7 @@ Everything else (charts, budgets, recurring bills, reminders) exists to make tha
     <td align="center"><img src="docs/screenshots/recurring.png" alt="Recurring transactions" width="260"><br><sub><b>Recurring</b><br>rent, subscriptions, salary</sub></td>
   </tr>
   <tr>
-    <td align="center"><img src="docs/screenshots/dark-home.png" alt="Dark theme" width="260"><br><sub><b>Dark theme</b><br>follows the system</sub></td>
+    <td align="center"><img src="docs/screenshots/dark-home.png" alt="Dark theme" width="260"><br><sub><b>Dark theme</b><br>system, or your choice in Settings</sub></td>
     <td align="center"><img src="docs/screenshots/suggestions.png" alt="Suggestions from bank texts" width="260"><br><sub><b>Bank-text suggestions</b><br>you confirm each one</sub></td>
     <td align="center"><img src="docs/screenshots/settings.png" alt="Settings" width="260"><br><sub><b>Settings</b><br>reminders, app lock, backups</sub></td>
   </tr>
@@ -84,11 +84,11 @@ Everything else (charts, budgets, recurring bills, reminders) exists to make tha
 ## ✨ What it does
 
 ### 💸 Spend with a plan
-- **A daily spending limit** that recalculates every day from what's left, so one bad day automatically tightens tomorrow ([how it works](#-how-the-daily-limit-works)).
+- **A daily spending limit** that recalculates every day from what's left, so one bad day automatically tightens tomorrow ([how it works](#-how-the-daily-limit-works)). It's optional: tap the cross to remove it from Home, and bring it back from the prompt that takes its place.
 - **Month-end forecast:** "at this pace you'll save about ₹24,238, ₹9,238 above your goal".
 - **Category budgets** with a warning when a purchase pushes you past **80%**, and again when you go over.
 - **Recurring transactions** (rent, subscriptions, salary) that log themselves on the right day, catch up if you were away, and are *set aside in advance* so a bill due on the 25th never ambushes you.
-- **Streaks:** a logging streak and a count of no-spend days, because small wins help.
+- **Streaks:** a logging streak and a count of no-spend days, because small wins help. A day with nothing to log keeps the streak alive with one tap on *Spent nothing today*.
 
 ### 📊 Understand where it goes
 - Category **donut**, **day-by-day bars** (tap a day), and a **calendar heatmap**.
@@ -98,6 +98,7 @@ Everything else (charts, budgets, recurring bills, reminders) exists to make tha
 
 ### ⚡ Log faster
 - **Home-screen widget**, **quick-settings tile** and a **launcher shortcut** all open the add sheet directly.
+- **Light, dark or system theme**, chosen in Settings → Appearance.
 - **Bank-text suggestions:** in your messages app, **Share** a bank text to Money Tracker (or copy it and tap *Settings → Add from a bank text*) and it becomes a suggestion you confirm. The app never reads your messages on its own and has **no SMS permission**.
 - **Tags** (`#goa`, `#work`), custom categories with icons and colors, date and time on every record, swipe to delete with undo.
 
@@ -266,7 +267,7 @@ version.
 
 The app isn't on the Play Store; it's a signed APK you hand to people you trust.
 
-1. Send them `MoneyTracker-1.2.1.apk`.
+1. Send them `MoneyTracker-1.3.0.apk`.
 2. They open it and allow *"Install unknown apps"* for the app they received it in.
 3. **Verify it first** if it came through a chat: compare the certificate fingerprint in [SECURITY.md](SECURITY.md#verify-your-download).
 4. Updates install over the old version and keep all data, as long as they're signed with the same key.

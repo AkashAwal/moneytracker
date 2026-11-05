@@ -61,14 +61,14 @@ The app is distributed as an APK outside the Play Store, so check that what you 
 On a computer with the Android SDK:
 
 ```bash
-apksigner verify --print-certs MoneyTracker-1.2.1.apk
+apksigner verify --print-certs MoneyTracker-1.3.0.apk
 # "Signer #1 certificate SHA-256 digest" must match the fingerprint above.
 ```
 
 Compare the file's checksum with the one published in `dist/SHA256SUMS.txt` / the release notes:
 
 ```bash
-sha256sum MoneyTracker-1.2.1.apk        # Windows: certutil -hashfile MoneyTracker-1.2.1.apk SHA256
+sha256sum MoneyTracker-1.3.0.apk        # Windows: certutil -hashfile MoneyTracker-1.3.0.apk SHA256
 ```
 
 If the fingerprint differs, **don't install it**. Android also refuses to install an update signed with a different
