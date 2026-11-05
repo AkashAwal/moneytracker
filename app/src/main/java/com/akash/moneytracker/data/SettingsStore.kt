@@ -82,6 +82,15 @@ class SettingsStore(private val context: Context) {
         }
     }
 
+    /** Back to "no goal set": the setup card on Home then starts empty. */
+    suspend fun resetGoal() {
+        context.dataStore.edit {
+            it[Keys.income] = 0
+            it[Keys.goal] = 0
+            it[Keys.goalMonth] = 0
+        }
+    }
+
     suspend fun setDailyLimitHidden(hidden: Boolean) {
         context.dataStore.edit { it[Keys.dailyLimitHidden] = hidden }
     }

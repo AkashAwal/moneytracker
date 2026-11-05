@@ -27,6 +27,10 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalUriHandler
+import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.unit.dp
 import com.akash.moneytracker.HomeState
 import com.akash.moneytracker.domain.Money
@@ -116,16 +120,16 @@ fun SettingsScreen(
         AppCard(Modifier.fillMaxWidth()) {
             SwitchRow("App lock", "Ask for your fingerprint, face or phone PIN", s.lockEnabled, onToggleLock)
             Hairline(Modifier.padding(start = 16.dp))
-            SettingRow("Add from a bank text", "Paste copied text", onPasteBankText)
+            ActionRow("Add from a bank text", "Copy a bank text, then tap here to add it", onPasteBankText)
         }
 
         Section("Your data")
         AppCard(Modifier.fillMaxWidth()) {
-            SettingRow("Back up everything", "Password-protected", onBackup)
+            ActionRow("Back up everything", "Saved as a password-protected file", onBackup)
             Hairline(Modifier.padding(start = 16.dp))
-            SettingRow("Restore from backup", "Replaces current data", onRestore)
+            ActionRow("Restore from backup", "Replaces everything on this phone", onRestore)
             Hairline(Modifier.padding(start = 16.dp))
-            SettingRow("Export transactions", "CSV spreadsheet", onExportCsv)
+            ActionRow("Export transactions", "A CSV file you can open in a spreadsheet", onExportCsv)
         }
         Text(
             "Everything is stored on this phone only. Back up regularly, especially before changing phones.",
@@ -139,6 +143,8 @@ fun SettingsScreen(
             val version = remember { context.packageManager.getPackageInfo(context.packageName, 0).versionName ?: "" }
             SettingRow("Version", version, onClick = null)
         }
+
+        MadeBy()
     }
 
     if (showName) {
@@ -207,6 +213,7 @@ private fun Section(title: String) {
     Text(title, style = MaterialTheme.typography.labelLarge, color = MaterialTheme.colorScheme.onSurfaceVariant)
 }
 
+/** A short value on the right, like a name or an amount. Longer descriptions belong in [ActionRow]. */
 @Composable
 private fun SettingRow(title: String, value: String, onClick: (() -> Unit)?) {
     Row(
@@ -215,11 +222,60 @@ private fun SettingRow(title: String, value: String, onClick: (() -> Unit)?) {
             .then(if (onClick != null) Modifier.clickable(onClick = onClick) else Modifier)
             .padding(horizontal = 16.dp, vertical = 16.dp),
         verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.SpaceBetween,
+        horizontalArrangement = Arrangement.spacedBy(12.dp),
+    ) {
+        // The value is measured first and kept on one line; the title takes whatever width is left.
+        Text(title, style = MaterialTheme.typography.bodyLarge, modifier = Modifier.weight(1f))
+        Text(
+            value,
+            style = MaterialTheme.typography.bodyMedium,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            maxLines = 1,
+        )
+    }
+}
+
+/**
+ * A tappable row with the title on top and a full-width description underneath. The description used to sit
+ * beside the title, where it was squeezed into a narrow column and broke across several lines.
+ */
+@Composable
+private fun ActionRow(title: String, description: String, onClick: () -> Unit) {
+    Column(
+        Modifier
+            .fillMaxWidth()
+            .clickable(onClick = onClick)
+            .padding(horizontal = 16.dp, vertical = 14.dp),
     ) {
         Text(title, style = MaterialTheme.typography.bodyLarge)
-        Text(value, style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+        Spacer(Modifier.height(2.dp))
+        Text(description, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
     }
+}
+
+private const val APP_PAGE = "https://akashawal.com/money-tracker"
+
+/** Credit line at the bottom of Settings; the whole line opens the app's page in the browser. */
+@Composable
+private fun MadeBy() {
+    val uriHandler = LocalUriHandler.current
+    Text(
+        "Money Tracker by Akash Awal",
+        style = MaterialTheme.typography.bodyMedium.copy(textDecoration = TextDecoration.Underline),
+        color = MaterialTheme.colorScheme.onSurfaceVariant,
+        textAlign = TextAlign.Center,
+        modifier = Modifier
+            .fillMaxWidth()
+            .clickable(role = Role.Button, onClickLabel = "Open the Money Tracker page") {
+                // The app itself never goes online: this just hands the address to the phone's browser.
+                try {
+                    uriHandler.openUri(APP_PAGE)
+                } catch (_: Exception) {
+                    // No browser installed: nothing to open.
+                }
+            }
+            .padding(vertical = 12.dp),
+    )
 }
 
 @Composable

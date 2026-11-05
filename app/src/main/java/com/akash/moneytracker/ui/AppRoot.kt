@@ -240,6 +240,7 @@ fun AppRoot(vm: MainViewModel, quickAddSignal: Int) {
                     onDismissSuggestion = vm::dismissSuggestion,
                     onHideLimit = { vm.setDailyLimitHidden(true) },
                     onShowLimit = { vm.setDailyLimitHidden(false) },
+                    onResetLimit = vm::resetDailyLimit,
                     onCheckIn = vm::checkInToday,
                 )
             }

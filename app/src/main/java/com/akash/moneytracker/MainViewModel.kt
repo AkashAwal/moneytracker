@@ -200,6 +200,11 @@ class MainViewModel(
         viewModelScope.launch { settingsStore.setDailyLimitHidden(hidden) }
     }
 
+    /** Forgets the savings goal and expected income, so Home asks for them again. Transactions are untouched. */
+    fun resetDailyLimit() {
+        viewModelScope.launch { settingsStore.resetGoal() }
+    }
+
     /** "I spent nothing today": counts as logging so a quiet day doesn't break the streak. */
     fun checkInToday() {
         viewModelScope.launch { settingsStore.checkIn(LocalDate.now().toEpochDay()) }

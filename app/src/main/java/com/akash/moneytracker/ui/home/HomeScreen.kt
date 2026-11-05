@@ -3,11 +3,11 @@ package com.akash.moneytracker.ui.home
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.IntrinsicSize
 import androidx.compose.foundation.layout.PaddingValues
-import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
+import androidx.compose.material3.AlertDialog
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.RowScope
 import androidx.compose.foundation.layout.Spacer
@@ -74,6 +74,8 @@ fun HomeScreen(
     /** Removes the daily limit from Home; it only comes back through [onShowLimit], on this screen. */
     onHideLimit: () -> Unit,
     onShowLimit: () -> Unit,
+    /** Clears the savings goal and income so the limit can be set up again from scratch. */
+    onResetLimit: () -> Unit,
     /** "I spent nothing today": keeps the logging streak going on a day with nothing to log. */
     onCheckIn: () -> Unit,
 ) {
@@ -106,6 +108,7 @@ fun HomeScreen(
                 onSaveGoal = onSaveGoal,
                 onHide = onHideLimit,
                 onShow = onShowLimit,
+                onReset = onResetLimit,
             )
         }
         if (state.suggestions.isNotEmpty()) {
@@ -129,30 +132,24 @@ fun HomeScreen(
             }
         }
         item {
-            Row(Modifier.height(IntrinsicSize.Min), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+            Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
                 val streak = state.streaks
                 StatCard(
                     "Logging streak",
                     if (streak.loggingStreak == 0) "Log today" else "🔥 ${streak.loggingStreak} ${if (streak.loggingStreak == 1) "day" else "days"}",
-                    Modifier.weight(1f).fillMaxHeight(),
-                    // A day with no spending has nothing to log, so it gets its own way to keep the streak.
-                    footer = if (streak.loggedToday) null else {
-                        {
-                            TextButton(
-                                onClick = onCheckIn,
-                                contentPadding = PaddingValues(0.dp),
-                                modifier = Modifier.height(28.dp),
-                            ) { Text("Spent nothing today", style = MaterialTheme.typography.labelMedium) }
-                        }
-                    },
+                    Modifier.weight(1f),
                 )
                 // Finished days this month on which no day-to-day spending was logged (today isn't counted until it ends).
                 StatCard(
-                    "No-spend this month",
+                    "No spend days",
                     "🌿 ${streak.noSpendDays} ${if (streak.noSpendDays == 1) "day" else "days"}",
-                    Modifier.weight(1f).fillMaxHeight(),
+                    Modifier.weight(1f),
                 )
             }
+        }
+        // A day with nothing to log has no transaction to count, so it gets its own one-tap way to keep the streak.
+        if (!state.streaks.loggedToday) {
+            item { NoSpendTodayButton(onCheckIn) }
         }
         item {
             SectionHeader("Recent", action = if (state.recent.isNotEmpty()) "See all" else null, onAction = onSeeAll)
@@ -272,14 +269,41 @@ private fun StatCard(
     value: String,
     modifier: Modifier = Modifier,
     valueColor: Color = MaterialTheme.colorScheme.onSurface,
-    footer: (@Composable () -> Unit)? = null,
 ) {
     AppCard(modifier) {
         Column(Modifier.padding(horizontal = 14.dp, vertical = 12.dp)) {
-            Text(label, style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+            // One line each, so labels never wrap and every card in a row stays the same height.
+            Text(
+                label,
+                style = MaterialTheme.typography.labelMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                maxLines = 1,
+                softWrap = false,
+            )
             Spacer(Modifier.height(2.dp))
-            Text(value, style = MaterialTheme.typography.titleMedium, color = valueColor, maxLines = 1)
-            footer?.invoke()
+            Text(value, style = MaterialTheme.typography.titleMedium, color = valueColor, maxLines = 1, softWrap = false)
+        }
+    }
+}
+
+/** Shown until today has a log or a check-in. Tapping it counts today as logged so the streak survives a quiet day. */
+@Composable
+private fun NoSpendTodayButton(onClick: () -> Unit) {
+    AppCard(Modifier.fillMaxWidth(), onClick = onClick) {
+        Row(
+            Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 12.dp),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Text("🌿", style = MaterialTheme.typography.titleMedium)
+            Spacer(Modifier.width(10.dp))
+            Column(Modifier.weight(1f)) {
+                Text("Spent nothing today", style = MaterialTheme.typography.titleSmall, color = MaterialTheme.colorScheme.primary)
+                Text(
+                    "Tap to keep your logging streak going",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+            }
         }
     }
 }
@@ -291,7 +315,9 @@ private fun DailyLimitCard(
     onSaveGoal: (income: Long, goal: Long) -> Unit,
     onHide: () -> Unit,
     onShow: () -> Unit,
+    onReset: () -> Unit,
 ) {
+    var confirmReset by remember { mutableStateOf(false) }
     // Optional feature: not everyone wants a savings target or a red warning on their home screen.
     if (state.settings.dailyLimitHidden) {
         ShowLimitPrompt(onShow)
@@ -313,7 +339,8 @@ private fun DailyLimitCard(
         borderColor = Color.Transparent,
         onClick = onSetGoal,
     ) {
-        Column(Modifier.padding(start = 20.dp, end = 20.dp, bottom = 20.dp)) {
+        // Bottom padding is small because the Reset button below supplies its own height.
+        Column(Modifier.padding(start = 20.dp, end = 20.dp, bottom = 6.dp)) {
             Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
                 Text(
                     if (budget.overToday) "Over today's limit" else "You can spend today",
@@ -376,7 +403,29 @@ private fun DailyLimitCard(
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
             }
+            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.End) {
+                TextButton(onClick = { confirmReset = true }, contentPadding = PaddingValues(horizontal = 8.dp)) {
+                    Text("Reset", style = MaterialTheme.typography.labelLarge, color = accent)
+                }
+            }
         }
+    }
+
+    if (confirmReset) {
+        AlertDialog(
+            onDismissRequest = { confirmReset = false },
+            shape = MaterialTheme.shapes.large,
+            containerColor = MaterialTheme.colorScheme.surface,
+            title = { Text("Reset your daily limit?") },
+            text = { Text("This clears your savings goal and expected income so you can set new ones. Your transactions aren't touched.") },
+            confirmButton = {
+                TextButton(onClick = {
+                    confirmReset = false
+                    onReset()
+                }) { Text("Reset") }
+            },
+            dismissButton = { TextButton(onClick = { confirmReset = false }) { Text("Cancel") } },
+        )
     }
 }
 
